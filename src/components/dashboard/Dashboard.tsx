@@ -1,10 +1,11 @@
-
-import React from 'react';
+import React, { useState } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Calendar, User, Database, Home } from 'lucide-react';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Calendar, User, Database, Home, Users, Settings } from 'lucide-react';
+import UserManagement from '@/components/admin/UserManagement';
 
 // Mock data para mostrar funcionalidad
 const mockStats = {
@@ -42,6 +43,7 @@ const mockRecentRequests = [
 
 const Dashboard: React.FC = () => {
   const { user } = useAuth();
+  const [activeTab, setActiveTab] = useState('overview');
 
   const formatCurrency = (amount: number) => {
     return new Intl.NumberFormat('es-MX', {
@@ -70,7 +72,7 @@ const Dashboard: React.FC = () => {
         <div className="flex items-center justify-between">
           <div>
             <h1 className="text-3xl font-bold text-gray-900">Dashboard Administrativo</h1>
-            <p className="text-gray-600">Resumen general del sistema de inventario TAKAB</p>
+            <p className="text-gray-600">Gestión completa del sistema de inventario TAKAB</p>
           </div>
           <div className="text-right">
             <p className="text-sm text-gray-500">Último actualizado</p>
@@ -78,111 +80,173 @@ const Dashboard: React.FC = () => {
           </div>
         </div>
 
-        {/* Métricas principales */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-          <Card className="takab-card text-white">
-            <CardHeader className="pb-2">
-              <CardTitle className="text-takab-300 text-sm font-medium">Total Productos</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">{stats.total_productos.toLocaleString()}</div>
-              <p className="text-takab-400 text-sm">En ambos almacenes</p>
-            </CardContent>
-          </Card>
+        <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
+          <TabsList className="grid w-full grid-cols-3">
+            <TabsTrigger value="overview" className="flex items-center gap-2">
+              <Home className="h-4 w-4" />
+              Resumen
+            </TabsTrigger>
+            <TabsTrigger value="users" className="flex items-center gap-2">
+              <Users className="h-4 w-4" />
+              Usuarios
+            </TabsTrigger>
+            <TabsTrigger value="system" className="flex items-center gap-2">
+              <Settings className="h-4 w-4" />
+              Sistema
+            </TabsTrigger>
+          </TabsList>
 
-          <Card className="border-red-200 bg-red-50">
-            <CardHeader className="pb-2">
-              <CardTitle className="text-red-600 text-sm font-medium">Stock Bajo</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold text-red-700">{stats.productos_bajo_stock}</div>
-              <p className="text-red-600 text-sm">Requieren restock</p>
-            </CardContent>
-          </Card>
+          <TabsContent value="overview" className="space-y-6">
+            {/* Métricas principales */}
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+              <Card className="takab-card text-white">
+                <CardHeader className="pb-2">
+                  <CardTitle className="text-takab-300 text-sm font-medium">Total Productos</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="text-2xl font-bold">{stats.total_productos.toLocaleString()}</div>
+                  <p className="text-takab-400 text-sm">En ambos almacenes</p>
+                </CardContent>
+              </Card>
 
-          <Card className="border-yellow-200 bg-yellow-50">
-            <CardHeader className="pb-2">
-              <CardTitle className="text-yellow-600 text-sm font-medium">Solicitudes Pendientes</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold text-yellow-700">{stats.solicitudes_pendientes}</div>
-              <p className="text-yellow-600 text-sm">Por aprobar</p>
-            </CardContent>
-          </Card>
+              <Card className="border-red-200 bg-red-50">
+                <CardHeader className="pb-2">
+                  <CardTitle className="text-red-600 text-sm font-medium">Stock Bajo</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="text-2xl font-bold text-red-700">{stats.productos_bajo_stock}</div>
+                  <p className="text-red-600 text-sm">Requieren restock</p>
+                </CardContent>
+              </Card>
 
-          <Card className="border-blue-200 bg-blue-50">
-            <CardHeader className="pb-2">
-              <CardTitle className="text-blue-600 text-sm font-medium">Herramientas Prestadas</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold text-blue-700">{stats.herramientas_prestadas}</div>
-              <p className="text-blue-600 text-sm">En campo</p>
-            </CardContent>
-          </Card>
-        </div>
+              <Card className="border-yellow-200 bg-yellow-50">
+                <CardHeader className="pb-2">
+                  <CardTitle className="text-yellow-600 text-sm font-medium">Solicitudes Pendientes</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="text-2xl font-bold text-yellow-700">{stats.solicitudes_pendientes}</div>
+                  <p className="text-yellow-600 text-sm">Por aprobar</p>
+                </CardContent>
+              </Card>
 
-        {/* Valor del inventario */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Database className="h-5 w-5 text-takab-600" />
-              Valor Total del Inventario
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-3xl font-bold text-takab-800 mb-2">
-              {formatCurrency(stats.valor_inventario)}
+              <Card className="border-blue-200 bg-blue-50">
+                <CardHeader className="pb-2">
+                  <CardTitle className="text-blue-600 text-sm font-medium">Herramientas Prestadas</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="text-2xl font-bold text-blue-700">{stats.herramientas_prestadas}</div>
+                  <p className="text-blue-600 text-sm">En campo</p>
+                </CardContent>
+              </Card>
             </div>
-            <p className="text-gray-600">Valor estimado de todos los productos en inventario</p>
-          </CardContent>
-        </Card>
 
-        {/* Alertas */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-red-600">Alertas del Sistema</CardTitle>
-            <CardDescription>Elementos que requieren atención inmediata</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-3">
-              {stats.alertas.map((alert) => (
-                <div key={alert.id} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
-                  <div className="flex-1">
-                    <p className="font-medium text-gray-900">{alert.mensaje}</p>
-                    <p className="text-sm text-gray-500">{alert.fecha}</p>
-                  </div>
-                  <Badge className={getStatusBadge(alert.prioridad)}>
-                    {alert.prioridad}
-                  </Badge>
+            {/* Valor del inventario */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Database className="h-5 w-5 text-takab-600" />
+                  Valor Total del Inventario
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="text-3xl font-bold text-takab-800 mb-2">
+                  {formatCurrency(stats.valor_inventario)}
                 </div>
-              ))}
-            </div>
-          </CardContent>
-        </Card>
+                <p className="text-gray-600">Valor estimado de todos los productos en inventario</p>
+              </CardContent>
+            </Card>
 
-        {/* Solicitudes recientes */}
-        <Card>
-          <CardHeader>
-            <CardTitle>Solicitudes Recientes</CardTitle>
-            <CardDescription>Últimas solicitudes de material</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-3">
-              {mockRecentRequests.map((request) => (
-                <div key={request.id} className="flex items-center justify-between p-3 border rounded-lg">
-                  <div>
-                    <p className="font-medium">{request.empleado}</p>
-                    <p className="text-sm text-gray-600">{request.proyecto}</p>
-                    <p className="text-xs text-gray-500">{request.fecha}</p>
-                  </div>
-                  <Badge className={getStatusBadge(request.estado)}>
-                    {request.estado}
-                  </Badge>
+            {/* Alertas */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-red-600">Alertas del Sistema</CardTitle>
+                <CardDescription>Elementos que requieren atención inmediata</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-3">
+                  {stats.alertas.map((alert) => (
+                    <div key={alert.id} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                      <div className="flex-1">
+                        <p className="font-medium text-gray-900">{alert.mensaje}</p>
+                        <p className="text-sm text-gray-500">{alert.fecha}</p>
+                      </div>
+                      <Badge className={getStatusBadge(alert.prioridad)}>
+                        {alert.prioridad}
+                      </Badge>
+                    </div>
+                  ))}
                 </div>
-              ))}
-            </div>
-          </CardContent>
-        </Card>
+              </CardContent>
+            </Card>
+
+            {/* Solicitudes recientes */}
+            <Card>
+              <CardHeader>
+                <CardTitle>Solicitudes Recientes</CardTitle>
+                <CardDescription>Últimas solicitudes de material</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-3">
+                  {mockRecentRequests.map((request) => (
+                    <div key={request.id} className="flex items-center justify-between p-3 border rounded-lg">
+                      <div>
+                        <p className="font-medium">{request.empleado}</p>
+                        <p className="text-sm text-gray-600">{request.proyecto}</p>
+                        <p className="text-xs text-gray-500">{request.fecha}</p>
+                      </div>
+                      <Badge className={getStatusBadge(request.estado)}>
+                        {request.estado}
+                      </Badge>
+                    </div>
+                  ))}
+                </div>
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          <TabsContent value="users">
+            <UserManagement />
+          </TabsContent>
+
+          <TabsContent value="system" className="space-y-6">
+            <Card>
+              <CardHeader>
+                <CardTitle>Configuración del Sistema</CardTitle>
+                <CardDescription>Configuraciones generales y base de datos SQLite</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-4">
+                  <div className="flex items-center justify-between p-4 bg-green-50 rounded-lg">
+                    <div>
+                      <h4 className="font-medium text-green-800">Base de Datos SQLite</h4>
+                      <p className="text-sm text-green-600">Sistema funcionando correctamente</p>
+                    </div>
+                    <Badge className="bg-green-100 text-green-800">Activo</Badge>
+                  </div>
+                  
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <Button variant="outline" className="justify-start">
+                      <Settings className="mr-2 h-4 w-4" />
+                      Configurar Categorías
+                    </Button>
+                    <Button variant="outline" className="justify-start">
+                      <Database className="mr-2 h-4 w-4" />
+                      Respaldar Base de Datos
+                    </Button>
+                    <Button variant="outline" className="justify-start">
+                      <Settings className="mr-2 h-4 w-4" />
+                      Configurar Almacenes
+                    </Button>
+                    <Button variant="outline" className="justify-start">
+                      <Settings className="mr-2 h-4 w-4" />
+                      Unidades de Medida
+                    </Button>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          </TabsContent>
+        </Tabs>
       </div>
     );
   }
