@@ -141,6 +141,17 @@ function insertInitialData() {
     insertCategory.run('Conectores y Accesorios', 'Conectores, terminales, empalmes');
     insertCategory.run('Tornillería y Ferretería', 'Tornillos, tuercas, anclas, etc.');
 
+    // Insert initial products
+    const insertProduct = db.prepare(`
+      INSERT INTO productos (nombre, descripcion, categoria_id, stock_minimo, stock_actual, ubicacion, estado, es_herramienta) 
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+    `);
+
+    insertProduct.run('Taladro Bosch GBH 2-28', 'Taladro percutor profesional', 1, 2, 5, 'Almacén 1', 'Nuevo', 1);
+    insertProduct.run('Cable THW 12 AWG', 'Cable de cobre para instalaciones eléctricas', 2, 100, 250, 'Almacén 1', 'Nuevo', 0);
+    insertProduct.run('Multímetro Fluke 117', 'Multímetro digital profesional', 1, 1, 3, 'Almacén 2', 'Nuevo', 1);
+    insertProduct.run('Conectores Wirenuts', 'Conectores para empalmes eléctricos', 3, 50, 120, 'Almacén 1', 'Nuevo', 0);
+
     console.log('Datos iniciales insertados en la base de datos');
   }
 }
@@ -240,6 +251,60 @@ export const userOperations = {
       return result.changes > 0;
     } catch (error) {
       console.error('Error al cambiar estado del usuario:', error);
+      return false;
+    }
+  }
+};
+
+// Product operations
+export const productOperations = {
+  // Get all products
+  getAllProducts: (): Product[] => {
+    const stmt = db.prepare('SELECT * FROM productos ORDER BY fecha_creacion DESC');
+    return stmt.all() as Product[];
+  },
+
+  // Get products with low stock
+  getLowStockProducts: (): Product[] => {
+    const stmt = db.prepare('SELECT * FROM productos WHERE stock_actual <= stock_minimo');
+    return stmt.all() as Product[];
+  },
+
+  // Create new product
+  createProduct: (productData: Omit<Product, 'id' | 'fecha_creacion'>): boolean => {
+    try {
+      const stmt = db.prepare(`
+        INSERT INTO productos (codigo, nombre, descripcion, proveedor_id, categoria_id, peso, anchura, profundidad, alto, unidad_medida, marca, color, especificaciones, origen, costo_compra, precio_venta, stock_minimo, stock_actual, ubicacion, estado, es_herramienta) 
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+      `);
+      
+      const result = stmt.run(
+        productData.codigo || null,
+        productData.nombre,
+        productData.descripcion || null,
+        productData.proveedor_id || null,
+        productData.categoria_id || null,
+        productData.peso || null,
+        productData.anchura || null,
+        productData.profundidad || null,
+        productData.alto || null,
+        productData.unidad_medida || null,
+        productData.marca || null,
+        productData.color || null,
+        productData.especificaciones || null,
+        productData.origen || null,
+        productData.costo_compra || null,
+        productData.precio_venta || null,
+        productData.stock_minimo,
+        productData.stock_actual,
+        productData.ubicacion,
+        productData.estado,
+        productData.es_herramienta ? 1 : 0
+      );
+      
+      return result.changes > 0;
+    } catch (error) {
+      console.error('Error al crear producto:', error);
       return false;
     }
   }

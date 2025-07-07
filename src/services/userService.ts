@@ -23,26 +23,51 @@ export const userService = {
 
   // Get all users (admin only)
   getAllUsers: (): User[] => {
-    return userOperations.getAllUsers();
+    try {
+      return userOperations.getAllUsers();
+    } catch (error) {
+      console.error('Error al obtener usuarios:', error);
+      return [];
+    }
   },
 
   // Create user (admin only)
   createUser: async (userData: Omit<User, 'id' | 'created_at' | 'updated_at'> & { password: string }): Promise<boolean> => {
-    return userOperations.createUser(userData);
+    try {
+      return userOperations.createUser(userData);
+    } catch (error) {
+      console.error('Error al crear usuario:', error);
+      return false;
+    }
   },
 
   // Update user (admin only)
   updateUser: async (id: number, userData: Partial<User>): Promise<boolean> => {
-    return userOperations.updateUser(id, userData);
+    try {
+      return userOperations.updateUser(id, userData);
+    } catch (error) {
+      console.error('Error al actualizar usuario:', error);
+      return false;
+    }
   },
 
   // Delete user (admin only)
   deleteUser: async (id: number): Promise<boolean> => {
-    return userOperations.deleteUser(id);
+    try {
+      return userOperations.deleteUser(id);
+    } catch (error) {
+      console.error('Error al eliminar usuario:', error);
+      return false;
+    }
   },
 
   // Toggle user status (admin only)
   toggleUserStatus: async (id: number): Promise<boolean> => {
-    return userOperations.toggleUserStatus(id);
+    try {
+      return userOperations.toggleUserStatus(id);
+    } catch (error) {
+      console.error('Error al cambiar estado del usuario:', error);
+      return false;
+    }
   }
 };
