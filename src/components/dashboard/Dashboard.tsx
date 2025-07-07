@@ -1,4 +1,5 @@
-import React, { useState } from 'react';
+
+import React, { useState, useEffect } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -6,44 +7,38 @@ import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Calendar, User, Database, Home, Users, Settings } from 'lucide-react';
 import UserManagement from '@/components/admin/UserManagement';
-
-// Mock data para mostrar funcionalidad
-const mockStats = {
-  admin: {
-    total_productos: 1247,
-    productos_bajo_stock: 23,
-    solicitudes_pendientes: 8,
-    herramientas_prestadas: 15,
-    valor_inventario: 2840750,
-    alertas: [
-      { id: 1, tipo: 'stock_bajo', mensaje: 'Cable UTP Cat6 por debajo del stock mínimo', fecha: '2024-01-07', prioridad: 'alta' },
-      { id: 2, tipo: 'herramienta_vencida', mensaje: 'Multímetro Fluke no devuelto (5 días de retraso)', fecha: '2024-01-05', prioridad: 'alta' },
-      { id: 3, tipo: 'stock_bajo', mensaje: 'Conectores RJ45 stock crítico', fecha: '2024-01-07', prioridad: 'media' },
-    ]
-  },
-  almacen: {
-    solicitudes_pendientes: 8,
-    herramientas_prestadas: 15,
-    productos_bajo_stock: 23,
-    entregas_hoy: 5,
-  },
-  empleado: {
-    solicitudes_activas: 3,
-    solicitudes_pendientes: 1,
-    herramientas_prestadas: 2,
-    ultima_solicitud: '2024-01-06',
-  }
-};
-
-const mockRecentRequests = [
-  { id: 1, empleado: 'Carlos Ruiz', proyecto: 'Instalación Centro Comercial', fecha: '2024-01-07', estado: 'pendiente' },
-  { id: 2, empleado: 'María López', proyecto: 'Red Oficinas Torre A', fecha: '2024-01-07', estado: 'aprobado' },
-  { id: 3, empleado: 'Juan Pérez', proyecto: 'Mantenimiento Planta Industrial', fecha: '2024-01-06', estado: 'entregado' },
-];
+import { dashboardService } from '@/services/dashboardService';
+import { DashboardStats } from '@/types';
 
 const Dashboard: React.FC = () => {
   const { user } = useAuth();
   const [activeTab, setActiveTab] = useState('overview');
+  const [dashboardStats, setDashboardStats] = useState<DashboardStats | null>(null);
+  const [recentRequests, setRecentRequests] = useState<any[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+
+  // Load dashboard data
+  const loadDashboardData = async () => {
+    try {
+      setIsLoading(true);
+      
+      if (user) {
+        const stats = await dashboardService.getDashboardStats(user.role);
+        setDashboardStats(stats);
+        
+        const requests = await dashboardService.getRecentRequests();
+        setRecentRequests(requests);
+      }
+    } catch (error) {
+      console.error('Error al cargar datos del dashboard:', error);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    loadDashboardData();
+  }, [user]);
 
   const formatCurrency = (amount: number) => {
     return new Intl.NumberFormat('es-MX', {
@@ -64,8 +59,19 @@ const Dashboard: React.FC = () => {
     return variants[status as keyof typeof variants] || 'bg-gray-100 text-gray-800';
   };
 
+  if (isLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="text-center">
+          <div className="w-16 h-16 border-4 border-takab-600 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+          <p className="text-takab-800 text-lg">Cargando dashboard...</p>
+        </div>
+      </div>
+    );
+  }
+
   if (user?.role === 'admin') {
-    const stats = mockStats.admin;
+    const stats = dashboardStats;
     
     return (
       <div className="space-y-6">
@@ -104,7 +110,7 @@ const Dashboard: React.FC = () => {
                   <CardTitle className="text-takab-300 text-sm font-medium">Total Productos</CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <div className="text-2xl font-bold">{stats.total_productos.toLocaleString()}</div>
+                  <div className="text-2xl font-bold">{stats?.total_productos?.toLocaleString() || 0}</div>
                   <p className="text-takab-400 text-sm">En ambos almacenes</p>
                 </CardContent>
               </Card>
@@ -114,7 +120,7 @@ const Dashboard: React.FC = () => {
                   <CardTitle className="text-red-600 text-sm font-medium">Stock Bajo</CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <div className="text-2xl font-bold text-red-700">{stats.productos_bajo_stock}</div>
+                  <div className="text-2xl font-bold text-red-700">{stats?.productos_bajo_stock || 0}</div>
                   <p className="text-red-600 text-sm">Requieren restock</p>
                 </CardContent>
               </Card>
@@ -124,7 +130,7 @@ const Dashboard: React.FC = () => {
                   <CardTitle className="text-yellow-600 text-sm font-medium">Solicitudes Pendientes</CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <div className="text-2xl font-bold text-yellow-700">{stats.solicitudes_pendientes}</div>
+                  <div className="text-2xl font-bold text-yellow-700">{stats?.solicitudes_pendientes || 0}</div>
                   <p className="text-yellow-600 text-sm">Por aprobar</p>
                 </CardContent>
               </Card>
@@ -134,7 +140,7 @@ const Dashboard: React.FC = () => {
                   <CardTitle className="text-blue-600 text-sm font-medium">Herramientas Prestadas</CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <div className="text-2xl font-bold text-blue-700">{stats.herramientas_prestadas}</div>
+                  <div className="text-2xl font-bold text-blue-700">{stats?.herramientas_prestadas || 0}</div>
                   <p className="text-blue-600 text-sm">En campo</p>
                 </CardContent>
               </Card>
@@ -150,58 +156,62 @@ const Dashboard: React.FC = () => {
               </CardHeader>
               <CardContent>
                 <div className="text-3xl font-bold text-takab-800 mb-2">
-                  {formatCurrency(stats.valor_inventario)}
+                  {formatCurrency(stats?.valor_inventario || 0)}
                 </div>
                 <p className="text-gray-600">Valor estimado de todos los productos en inventario</p>
               </CardContent>
             </Card>
 
             {/* Alertas */}
-            <Card>
-              <CardHeader>
-                <CardTitle className="text-red-600">Alertas del Sistema</CardTitle>
-                <CardDescription>Elementos que requieren atención inmediata</CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-3">
-                  {stats.alertas.map((alert) => (
-                    <div key={alert.id} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
-                      <div className="flex-1">
-                        <p className="font-medium text-gray-900">{alert.mensaje}</p>
-                        <p className="text-sm text-gray-500">{alert.fecha}</p>
+            {stats?.alertas && stats.alertas.length > 0 && (
+              <Card>
+                <CardHeader>
+                  <CardTitle className="text-red-600">Alertas del Sistema</CardTitle>
+                  <CardDescription>Elementos que requieren atención inmediata</CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-3">
+                    {stats.alertas.map((alert) => (
+                      <div key={alert.id} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                        <div className="flex-1">
+                          <p className="font-medium text-gray-900">{alert.mensaje}</p>
+                          <p className="text-sm text-gray-500">{alert.fecha}</p>
+                        </div>
+                        <Badge className={getStatusBadge(alert.prioridad)}>
+                          {alert.prioridad}
+                        </Badge>
                       </div>
-                      <Badge className={getStatusBadge(alert.prioridad)}>
-                        {alert.prioridad}
-                      </Badge>
-                    </div>
-                  ))}
-                </div>
-              </CardContent>
-            </Card>
+                    ))}
+                  </div>
+                </CardContent>
+              </Card>
+            )}
 
             {/* Solicitudes recientes */}
-            <Card>
-              <CardHeader>
-                <CardTitle>Solicitudes Recientes</CardTitle>
-                <CardDescription>Últimas solicitudes de material</CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-3">
-                  {mockRecentRequests.map((request) => (
-                    <div key={request.id} className="flex items-center justify-between p-3 border rounded-lg">
-                      <div>
-                        <p className="font-medium">{request.empleado}</p>
-                        <p className="text-sm text-gray-600">{request.proyecto}</p>
-                        <p className="text-xs text-gray-500">{request.fecha}</p>
+            {recentRequests.length > 0 && (
+              <Card>
+                <CardHeader>
+                  <CardTitle>Solicitudes Recientes</CardTitle>
+                  <CardDescription>Últimas solicitudes de material desde la base de datos</CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-3">
+                    {recentRequests.slice(0, 5).map((request) => (
+                      <div key={request.id} className="flex items-center justify-between p-3 border rounded-lg">
+                        <div>
+                          <p className="font-medium">{request.empleado_nombre}</p>
+                          <p className="text-sm text-gray-600">{request.proyecto || 'Sin proyecto especificado'}</p>
+                          <p className="text-xs text-gray-500">{new Date(request.fecha_solicitud).toLocaleDateString('es-MX')}</p>
+                        </div>
+                        <Badge className={getStatusBadge(request.estado)}>
+                          {request.estado}
+                        </Badge>
                       </div>
-                      <Badge className={getStatusBadge(request.estado)}>
-                        {request.estado}
-                      </Badge>
-                    </div>
-                  ))}
-                </div>
-              </CardContent>
-            </Card>
+                    ))}
+                  </div>
+                </CardContent>
+              </Card>
+            )}
           </TabsContent>
 
           <TabsContent value="users">
@@ -252,8 +262,6 @@ const Dashboard: React.FC = () => {
   }
 
   if (user?.role === 'almacen') {
-    const stats = mockStats.almacen;
-    
     return (
       <div className="space-y-6">
         <div>
@@ -267,7 +275,7 @@ const Dashboard: React.FC = () => {
               <CardTitle className="text-yellow-600 text-sm font-medium">Solicitudes Pendientes</CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold text-yellow-700">{stats.solicitudes_pendientes}</div>
+              <div className="text-2xl font-bold text-yellow-700">{dashboardStats?.solicitudes_pendientes || 0}</div>
               <p className="text-yellow-600 text-sm">Por revisar</p>
             </CardContent>
           </Card>
@@ -277,7 +285,7 @@ const Dashboard: React.FC = () => {
               <CardTitle className="text-green-600 text-sm font-medium">Entregas Hoy</CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold text-green-700">{stats.entregas_hoy}</div>
+              <div className="text-2xl font-bold text-green-700">0</div>
               <p className="text-green-600 text-sm">Completadas</p>
             </CardContent>
           </Card>
@@ -287,7 +295,7 @@ const Dashboard: React.FC = () => {
               <CardTitle className="text-blue-600 text-sm font-medium">Herramientas Prestadas</CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold text-blue-700">{stats.herramientas_prestadas}</div>
+              <div className="text-2xl font-bold text-blue-700">{dashboardStats?.herramientas_prestadas || 0}</div>
               <p className="text-blue-600 text-sm">En campo</p>
             </CardContent>
           </Card>
@@ -297,7 +305,7 @@ const Dashboard: React.FC = () => {
               <CardTitle className="text-red-600 text-sm font-medium">Stock Bajo</CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold text-red-700">{stats.productos_bajo_stock}</div>
+              <div className="text-2xl font-bold text-red-700">{dashboardStats?.productos_bajo_stock || 0}</div>
               <p className="text-red-600 text-sm">Requieren restock</p>
             </CardContent>
           </Card>
@@ -331,17 +339,20 @@ const Dashboard: React.FC = () => {
             </CardHeader>
             <CardContent>
               <div className="space-y-3">
-                {mockRecentRequests.slice(0, 3).map((request) => (
+                {recentRequests.slice(0, 3).map((request) => (
                   <div key={request.id} className="flex items-center justify-between p-2 border rounded">
                     <div>
-                      <p className="font-medium text-sm">{request.empleado}</p>
-                      <p className="text-xs text-gray-500">{request.fecha}</p>
+                      <p className="font-medium text-sm">{request.empleado_nombre}</p>
+                      <p className="text-xs text-gray-500">{new Date(request.fecha_solicitud).toLocaleDateString('es-MX')}</p>
                     </div>
                     <Badge className={getStatusBadge(request.estado)}>
                       {request.estado}
                     </Badge>
                   </div>
                 ))}
+                {recentRequests.length === 0 && (
+                  <p className="text-gray-500 text-sm text-center py-4">No hay solicitudes recientes</p>
+                )}
               </div>
             </CardContent>
           </Card>
@@ -351,8 +362,6 @@ const Dashboard: React.FC = () => {
   }
 
   // Dashboard para empleados
-  const stats = mockStats.empleado;
-  
   return (
     <div className="space-y-6">
       <div>
@@ -366,7 +375,7 @@ const Dashboard: React.FC = () => {
             <CardTitle className="text-blue-600 text-sm font-medium">Solicitudes Activas</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-blue-700">{stats.solicitudes_activas}</div>
+            <div className="text-2xl font-bold text-blue-700">0</div>
             <p className="text-blue-600 text-sm">En proceso</p>
           </CardContent>
         </Card>
@@ -376,7 +385,7 @@ const Dashboard: React.FC = () => {
             <CardTitle className="text-yellow-600 text-sm font-medium">Pendientes</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-yellow-700">{stats.solicitudes_pendientes}</div>
+            <div className="text-2xl font-bold text-yellow-700">0</div>
             <p className="text-yellow-600 text-sm">Por aprobar</p>
           </CardContent>
         </Card>
@@ -386,7 +395,7 @@ const Dashboard: React.FC = () => {
             <CardTitle className="text-green-600 text-sm font-medium">Herramientas en Uso</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-green-700">{stats.herramientas_prestadas}</div>
+            <div className="text-2xl font-bold text-green-700">0</div>
             <p className="text-green-600 text-sm">Por devolver</p>
           </CardContent>
         </Card>
@@ -420,27 +429,23 @@ const Dashboard: React.FC = () => {
           </CardHeader>
           <CardContent>
             <div className="space-y-3">
-              <div className="flex items-center justify-between p-3 bg-yellow-50 rounded-lg">
-                <div>
-                  <p className="font-medium text-sm">Material para Torre A</p>
-                  <p className="text-xs text-gray-500">Enviada: 07/01/2024</p>
-                </div>
-                <Badge className="bg-yellow-100 text-yellow-800">pendiente</Badge>
-              </div>
-              <div className="flex items-center justify-between p-3 bg-blue-50 rounded-lg">
-                <div>
-                  <p className="font-medium text-sm">Herramientas mantenimiento</p>
-                  <p className="text-xs text-gray-500">Aprobada: 06/01/2024</p>
-                </div>
-                <Badge className="bg-blue-100 text-blue-800">aprobado</Badge>
-              </div>
-              <div className="flex items-center justify-between p-3 bg-green-50 rounded-lg">
-                <div>
-                  <p className="font-medium text-sm">Cables y conectores</p>
-                  <p className="text-xs text-gray-500">Entregada: 05/01/2024</p>
-                </div>
-                <Badge className="bg-green-100 text-green-800">entregado</Badge>
-              </div>
+              {recentRequests.length === 0 ? (
+                <p className="text-gray-500 text-sm text-center py-4">No tienes solicitudes activas</p>
+              ) : (
+                recentRequests.slice(0, 3).map((request, index) => (
+                  <div key={index} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                    <div>
+                      <p className="font-medium text-sm">{request.proyecto || 'Sin proyecto'}</p>
+                      <p className="text-xs text-gray-500">
+                        {new Date(request.fecha_solicitud).toLocaleDateString('es-MX')}
+                      </p>
+                    </div>
+                    <Badge className={getStatusBadge(request.estado)}>
+                      {request.estado}
+                    </Badge>
+                  </div>
+                ))
+              )}
             </div>
           </CardContent>
         </Card>
