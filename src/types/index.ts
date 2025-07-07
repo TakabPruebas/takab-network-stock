@@ -1,3 +1,4 @@
+
 export type UserRole = 'admin' | 'almacen' | 'empleado';
 
 export interface User {
@@ -9,6 +10,11 @@ export interface User {
   email?: string;
   created_at?: string;
   updated_at?: string;
+}
+
+// Internal database user type that includes password
+export interface DatabaseUser extends User {
+  password: string;
 }
 
 export interface AuthContextType {

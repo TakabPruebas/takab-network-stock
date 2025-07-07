@@ -1,16 +1,16 @@
 
 import { userOperations } from '@/lib/database';
-import { User } from '@/types';
+import { User, DatabaseUser } from '@/types';
 
 export const userService = {
   // Authenticate user
   authenticate: async (username: string, password: string): Promise<User | null> => {
     try {
-      const user = userOperations.getUserByUsername(username);
+      const dbUser = userOperations.getUserByUsername(username) as DatabaseUser | null;
       
-      if (user && user.password === password && user.active) {
+      if (dbUser && dbUser.password === password && dbUser.active) {
         // Remove password from returned user object
-        const { password: _, ...userWithoutPassword } = user;
+        const { password: _, ...userWithoutPassword } = dbUser;
         return userWithoutPassword;
       }
       

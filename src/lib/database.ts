@@ -1,6 +1,6 @@
 
 import Database from 'better-sqlite3';
-import { User, Product, MaterialRequest, DashboardStats } from '@/types';
+import { User, Product, MaterialRequest, DashboardStats, DatabaseUser } from '@/types';
 
 let db: Database.Database;
 
@@ -157,14 +157,14 @@ export function getDatabase() {
 export const userOperations = {
   // Get all users
   getAllUsers: (): User[] => {
-    const stmt = db.prepare('SELECT * FROM usuarios ORDER BY created_at DESC');
+    const stmt = db.prepare('SELECT id, username, name, role, active, email, created_at, updated_at FROM usuarios ORDER BY created_at DESC');
     return stmt.all() as User[];
   },
 
-  // Get user by username
-  getUserByUsername: (username: string): User | null => {
+  // Get user by username (including password for authentication)
+  getUserByUsername: (username: string): DatabaseUser | null => {
     const stmt = db.prepare('SELECT * FROM usuarios WHERE username = ?');
-    return stmt.get(username) as User | null;
+    return stmt.get(username) as DatabaseUser | null;
   },
 
   // Create new user
