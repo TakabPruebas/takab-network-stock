@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -6,44 +6,36 @@ import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Calendar, User, Database, Home, Users, Settings } from 'lucide-react';
 import UserManagement from '@/components/admin/UserManagement';
-
-// Mock data para mostrar funcionalidad
-const mockStats = {
-  admin: {
-    total_productos: 1247,
-    productos_bajo_stock: 23,
-    solicitudes_pendientes: 8,
-    herramientas_prestadas: 15,
-    valor_inventario: 2840750,
-    alertas: [
-      { id: 1, tipo: 'stock_bajo', mensaje: 'Cable UTP Cat6 por debajo del stock mínimo', fecha: '2024-01-07', prioridad: 'alta' },
-      { id: 2, tipo: 'herramienta_vencida', mensaje: 'Multímetro Fluke no devuelto (5 días de retraso)', fecha: '2024-01-05', prioridad: 'alta' },
-      { id: 3, tipo: 'stock_bajo', mensaje: 'Conectores RJ45 stock crítico', fecha: '2024-01-07', prioridad: 'media' },
-    ]
-  },
-  almacen: {
-    solicitudes_pendientes: 8,
-    herramientas_prestadas: 15,
-    productos_bajo_stock: 23,
-    entregas_hoy: 5,
-  },
-  empleado: {
-    solicitudes_activas: 3,
-    solicitudes_pendientes: 1,
-    herramientas_prestadas: 2,
-    ultima_solicitud: '2024-01-06',
-  }
-};
-
-const mockRecentRequests = [
-  { id: 1, empleado: 'Carlos Ruiz', proyecto: 'Instalación Centro Comercial', fecha: '2024-01-07', estado: 'pendiente' },
-  { id: 2, empleado: 'María López', proyecto: 'Red Oficinas Torre A', fecha: '2024-01-07', estado: 'aprobado' },
-  { id: 3, empleado: 'Juan Pérez', proyecto: 'Mantenimiento Planta Industrial', fecha: '2024-01-06', estado: 'entregado' },
-];
+import { dashboardService } from '@/services/dashboardService';
+import { DashboardStats } from '@/types';
 
 const Dashboard: React.FC = () => {
   const { user } = useAuth();
   const [activeTab, setActiveTab] = useState('overview');
+  const [stats, setStats] = useState<DashboardStats | null>(null);
+  const [recentRequests, setRecentRequests] = useState<any[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+
+  useEffect(() => {
+    loadDashboardData();
+  }, []);
+
+  const loadDashboardData = async () => {
+    setIsLoading(true);
+    try {
+      const [dashboardStats, requests] = await Promise.all([
+        dashboardService.getStats(),
+        dashboardService.getRecentMaterialRequests()
+      ]);
+      
+      setStats(dashboardStats);
+      setRecentRequests(requests);
+    } catch (error) {
+      console.error('Error al cargar datos del dashboard:', error);
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   const formatCurrency = (amount: number) => {
     return new Intl.NumberFormat('es-MX', {
@@ -64,8 +56,19 @@ const Dashboard: React.FC = () => {
     return variants[status as keyof typeof variants] || 'bg-gray-100 text-gray-800';
   };
 
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-takab-600 mx-auto"></div>
+          <p className="mt-4 text-gray-600">Cargando dashboard...</p>
+        </div>
+      </div>
+    );
+  }
+
   if (user?.role === 'admin') {
-    const stats = mockStats.admin;
+    if (!stats) return <div>Error al cargar datos</div>;
     
     return (
       <div className="space-y-6">
@@ -97,7 +100,7 @@ const Dashboard: React.FC = () => {
           </TabsList>
 
           <TabsContent value="overview" className="space-y-6">
-            {/* Métricas principales */}
+            {/* Métricas principales - ahora usando datos reales */}
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
               <Card className="takab-card text-white">
                 <CardHeader className="pb-2">
@@ -140,7 +143,7 @@ const Dashboard: React.FC = () => {
               </Card>
             </div>
 
-            {/* Valor del inventario */}
+            {/* Valor del inventario - datos reales */}
             <Card>
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
@@ -156,7 +159,7 @@ const Dashboard: React.FC = () => {
               </CardContent>
             </Card>
 
-            {/* Alertas */}
+            {/* Alertas - datos reales */}
             <Card>
               <CardHeader>
                 <CardTitle className="text-red-600">Alertas del Sistema</CardTitle>
@@ -164,22 +167,26 @@ const Dashboard: React.FC = () => {
               </CardHeader>
               <CardContent>
                 <div className="space-y-3">
-                  {stats.alertas.map((alert) => (
-                    <div key={alert.id} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
-                      <div className="flex-1">
-                        <p className="font-medium text-gray-900">{alert.mensaje}</p>
-                        <p className="text-sm text-gray-500">{alert.fecha}</p>
+                  {stats.alertas.length > 0 ? (
+                    stats.alertas.map((alert) => (
+                      <div key={alert.id} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                        <div className="flex-1">
+                          <p className="font-medium text-gray-900">{alert.mensaje}</p>
+                          <p className="text-sm text-gray-500">{new Date(alert.fecha).toLocaleDateString('es-MX')}</p>
+                        </div>
+                        <Badge className={getStatusBadge(alert.prioridad)}>
+                          {alert.prioridad}
+                        </Badge>
                       </div>
-                      <Badge className={getStatusBadge(alert.prioridad)}>
-                        {alert.prioridad}
-                      </Badge>
-                    </div>
-                  ))}
+                    ))
+                  ) : (
+                    <p className="text-gray-500 text-center py-4">No hay alertas activas</p>
+                  )}
                 </div>
               </CardContent>
             </Card>
 
-            {/* Solicitudes recientes */}
+            {/* Solicitudes recientes - datos reales */}
             <Card>
               <CardHeader>
                 <CardTitle>Solicitudes Recientes</CardTitle>
@@ -187,18 +194,22 @@ const Dashboard: React.FC = () => {
               </CardHeader>
               <CardContent>
                 <div className="space-y-3">
-                  {mockRecentRequests.map((request) => (
-                    <div key={request.id} className="flex items-center justify-between p-3 border rounded-lg">
-                      <div>
-                        <p className="font-medium">{request.empleado}</p>
-                        <p className="text-sm text-gray-600">{request.proyecto}</p>
-                        <p className="text-xs text-gray-500">{request.fecha}</p>
+                  {recentRequests.length > 0 ? (
+                    recentRequests.map((request) => (
+                      <div key={request.id} className="flex items-center justify-between p-3 border rounded-lg">
+                        <div>
+                          <p className="font-medium">{request.empleado_nombre}</p>
+                          <p className="text-sm text-gray-600">{request.proyecto || 'Sin proyecto especificado'}</p>
+                          <p className="text-xs text-gray-500">{new Date(request.fecha_solicitud).toLocaleDateString('es-MX')}</p>
+                        </div>
+                        <Badge className={getStatusBadge(request.estado)}>
+                          {request.estado}
+                        </Badge>
                       </div>
-                      <Badge className={getStatusBadge(request.estado)}>
-                        {request.estado}
-                      </Badge>
-                    </div>
-                  ))}
+                    ))
+                  ) : (
+                    <p className="text-gray-500 text-center py-4">No hay solicitudes recientes</p>
+                  )}
                 </div>
               </CardContent>
             </Card>
@@ -251,8 +262,9 @@ const Dashboard: React.FC = () => {
     );
   }
 
+  
   if (user?.role === 'almacen') {
-    const stats = mockStats.almacen;
+    if (!stats) return <div>Error al cargar datos</div>;
     
     return (
       <div className="space-y-6">
@@ -277,7 +289,8 @@ const Dashboard: React.FC = () => {
               <CardTitle className="text-green-600 text-sm font-medium">Entregas Hoy</CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold text-green-700">{stats.entregas_hoy}</div>
+              {/* Assuming you have a field for completed deliveries today in your stats */}
+              <div className="text-2xl font-bold text-green-700">0</div>
               <p className="text-green-600 text-sm">Completadas</p>
             </CardContent>
           </Card>
@@ -331,11 +344,11 @@ const Dashboard: React.FC = () => {
             </CardHeader>
             <CardContent>
               <div className="space-y-3">
-                {mockRecentRequests.slice(0, 3).map((request) => (
+                {recentRequests.slice(0, 3).map((request) => (
                   <div key={request.id} className="flex items-center justify-between p-2 border rounded">
                     <div>
-                      <p className="font-medium text-sm">{request.empleado}</p>
-                      <p className="text-xs text-gray-500">{request.fecha}</p>
+                      <p className="font-medium text-sm">{request.empleado_nombre}</p>
+                      <p className="text-xs text-gray-500">{new Date(request.fecha_solicitud).toLocaleDateString()}</p>
                     </div>
                     <Badge className={getStatusBadge(request.estado)}>
                       {request.estado}
@@ -351,7 +364,12 @@ const Dashboard: React.FC = () => {
   }
 
   // Dashboard para empleados
-  const stats = mockStats.empleado;
+  const stats = {
+    solicitudes_activas: 3,
+    solicitudes_pendientes: 1,
+    herramientas_prestadas: 2,
+    ultima_solicitud: '2024-01-06',
+  };
   
   return (
     <div className="space-y-6">

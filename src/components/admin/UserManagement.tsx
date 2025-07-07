@@ -1,5 +1,4 @@
-
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -11,46 +10,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { User, UserRole } from '@/types';
 import { UserPlus, Edit, Trash2, ToggleLeft, ToggleRight } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
-
-// Mock data para desarrollo - en producción esto vendría de SQLite
-const mockUsers: User[] = [
-  {
-    id: 1,
-    username: 'admin',
-    name: 'Administrador TAKAB',
-    role: 'admin',
-    active: true,
-    email: 'admin@takab.com',
-    created_at: '2024-01-01'
-  },
-  {
-    id: 2,
-    username: 'almacen',
-    name: 'Empleado de Almacén',
-    role: 'almacen',
-    active: true,
-    email: 'almacen@takab.com',
-    created_at: '2024-01-01'
-  },
-  {
-    id: 3,
-    username: 'empleado',
-    name: 'Juan Pérez',
-    role: 'empleado',
-    active: true,
-    email: 'juan.perez@takab.com',
-    created_at: '2024-01-01'
-  },
-  {
-    id: 4,
-    username: 'maria.lopez',
-    name: 'María López',
-    role: 'empleado',
-    active: false,
-    email: 'maria.lopez@takab.com',
-    created_at: '2024-01-02'
-  }
-];
+import { userService } from '@/services/userService';
 
 interface UserFormData {
   username: string;
@@ -61,7 +21,8 @@ interface UserFormData {
 }
 
 const UserManagement: React.FC = () => {
-  const [users, setUsers] = useState<User[]>(mockUsers);
+  const [users, setUsers] = useState<User[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editingUser, setEditingUser] = useState<User | null>(null);
   const [formData, setFormData] = useState<UserFormData>({
@@ -72,6 +33,27 @@ const UserManagement: React.FC = () => {
     password: ''
   });
   const { toast } = useToast();
+
+  // Cargar usuarios desde la base de datos
+  useEffect(() => {
+    loadUsers();
+  }, []);
+
+  const loadUsers = async () => {
+    setIsLoading(true);
+    try {
+      const usersData = await userService.getAllUsers();
+      setUsers(usersData);
+    } catch (error) {
+      toast({
+        title: 'Error',
+        description: 'No se pudieron cargar los usuarios',
+        variant: 'destructive',
+      });
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   const resetForm = () => {
     setFormData({
@@ -121,38 +103,33 @@ const UserManagement: React.FC = () => {
     }
 
     try {
+      let success = false;
+      
       if (editingUser) {
-        // Actualizar usuario existente
-        const updatedUsers = users.map(user => 
-          user.id === editingUser.id 
-            ? { ...user, ...formData, updated_at: new Date().toISOString() }
-            : user
-        );
-        setUsers(updatedUsers);
-        toast({
-          title: 'Usuario actualizado',
-          description: `El usuario ${formData.name} ha sido actualizado correctamente`,
-        });
+        success = await userService.updateUser(editingUser.id, formData);
+        if (success) {
+          toast({
+            title: 'Usuario actualizado',
+            description: `El usuario ${formData.name} ha sido actualizado correctamente`,
+          });
+        }
       } else {
-        // Crear nuevo usuario
-        const newUser: User = {
-          id: Math.max(...users.map(u => u.id)) + 1,
-          username: formData.username,
-          name: formData.name,
-          email: formData.email,
-          role: formData.role,
-          active: true,
-          created_at: new Date().toISOString(),
-        };
-        setUsers([...users, newUser]);
-        toast({
-          title: 'Usuario creado',
-          description: `El usuario ${formData.name} ha sido creado correctamente`,
-        });
+        success = await userService.createUser(formData);
+        if (success) {
+          toast({
+            title: 'Usuario creado',
+            description: `El usuario ${formData.name} ha sido creado correctamente`,
+          });
+        }
       }
 
-      setIsDialogOpen(false);
-      resetForm();
+      if (success) {
+        setIsDialogOpen(false);
+        resetForm();
+        loadUsers(); // Recargar la lista
+      } else {
+        throw new Error('La operación falló');
+      }
     } catch (error) {
       toast({
         title: 'Error',
@@ -162,22 +139,27 @@ const UserManagement: React.FC = () => {
     }
   };
 
-  const handleToggleStatus = (userId: number) => {
-    const updatedUsers = users.map(user => 
-      user.id === userId 
-        ? { ...user, active: !user.active, updated_at: new Date().toISOString() }
-        : user
-    );
-    setUsers(updatedUsers);
-    
-    const user = users.find(u => u.id === userId);
-    toast({
-      title: user?.active ? 'Usuario desactivado' : 'Usuario activado',
-      description: `El usuario ${user?.name} ha sido ${user?.active ? 'desactivado' : 'activado'}`,
-    });
+  const handleToggleStatus = async (userId: number) => {
+    try {
+      const success = await userService.toggleUserStatus(userId);
+      if (success) {
+        const user = users.find(u => u.id === userId);
+        toast({
+          title: user?.active ? 'Usuario desactivado' : 'Usuario activado',
+          description: `El usuario ${user?.name} ha sido ${user?.active ? 'desactivado' : 'activado'}`,
+        });
+        loadUsers(); // Recargar la lista
+      }
+    } catch (error) {
+      toast({
+        title: 'Error',
+        description: 'No se pudo cambiar el estado del usuario',
+        variant: 'destructive',
+      });
+    }
   };
 
-  const handleDeleteUser = (userId: number) => {
+  const handleDeleteUser = async (userId: number) => {
     const user = users.find(u => u.id === userId);
     if (user?.role === 'admin') {
       toast({
@@ -188,13 +170,22 @@ const UserManagement: React.FC = () => {
       return;
     }
 
-    const updatedUsers = users.filter(user => user.id !== userId);
-    setUsers(updatedUsers);
-    
-    toast({
-      title: 'Usuario eliminado',
-      description: `El usuario ${user?.name} ha sido eliminado`,
-    });
+    try {
+      const success = await userService.deleteUser(userId);
+      if (success) {
+        toast({
+          title: 'Usuario eliminado',
+          description: `El usuario ${user?.name} ha sido eliminado`,
+        });
+        loadUsers(); // Recargar la lista
+      }
+    } catch (error) {
+      toast({
+        title: 'Error',
+        description: 'No se pudo eliminar el usuario',
+        variant: 'destructive',
+      });
+    }
   };
 
   const getRoleBadge = (role: UserRole) => {
@@ -216,6 +207,17 @@ const UserManagement: React.FC = () => {
       </Badge>
     );
   };
+
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center p-8">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-takab-600 mx-auto"></div>
+          <p className="mt-2 text-gray-600">Cargando usuarios...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">
