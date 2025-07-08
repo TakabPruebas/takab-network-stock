@@ -8,13 +8,6 @@ export interface User {
   role: UserRole;
   active: boolean;
   email?: string;
-  created_at?: string;
-  updated_at?: string;
-}
-
-// Internal database user type that includes password
-export interface DatabaseUser extends User {
-  password: string;
 }
 
 export interface AuthContextType {
@@ -22,14 +15,6 @@ export interface AuthContextType {
   login: (username: string, password: string) => Promise<boolean>;
   logout: () => void;
   isLoading: boolean;
-}
-
-export interface UserManagement {
-  users: User[];
-  createUser: (userData: Omit<User, 'id' | 'created_at' | 'updated_at'> & { password: string }) => Promise<boolean>;
-  updateUser: (id: number, userData: Partial<User>) => Promise<boolean>;
-  deleteUser: (id: number) => Promise<boolean>;
-  toggleUserStatus: (id: number) => Promise<boolean>;
 }
 
 export interface Product {
@@ -114,57 +99,4 @@ export interface Supplier {
   telefono?: string;
   email?: string;
   direccion?: string;
-}
-
-// SQLite Database Schema Types
-export interface DatabaseSchema {
-  usuarios: {
-    id: number;
-    username: string;
-    password: string;
-    name: string;
-    role: UserRole;
-    active: boolean;
-    email?: string;
-    created_at: string;
-    updated_at: string;
-  };
-  productos: {
-    id: number;
-    codigo?: string;
-    nombre: string;
-    descripcion?: string;
-    proveedor_id?: number;
-    categoria_id?: number;
-    peso?: number;
-    anchura?: number;
-    profundidad?: number;
-    alto?: number;
-    unidad_medida?: string;
-    marca?: string;
-    color?: string;
-    especificaciones?: string;
-    origen?: string;
-    costo_compra?: number;
-    precio_venta?: number;
-    stock_minimo: number;
-    stock_actual: number;
-    ubicacion: string;
-    estado: string;
-    es_herramienta: boolean;
-    fecha_creacion: string;
-  };
-  categorias: {
-    id: number;
-    nombre: string;
-    descripcion?: string;
-  };
-  proveedores: {
-    id: number;
-    nombre: string;
-    contacto?: string;
-    telefono?: string;
-    email?: string;
-    direccion?: string;
-  };
 }

@@ -1,9 +1,39 @@
 
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { User, AuthContextType } from '@/types';
-import { userService } from '@/services/userService';
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
+
+// Usuarios de prueba para desarrollo
+const mockUsers: (User & { password: string })[] = [
+  {
+    id: 1,
+    username: 'admin',
+    password: 'admin123',
+    name: 'Administrador TAKAB',
+    role: 'admin',
+    active: true,
+    email: 'admin@takab.com'
+  },
+  {
+    id: 2,
+    username: 'almacen',
+    password: 'almacen123',
+    name: 'Empleado de Almacén',
+    role: 'almacen',
+    active: true,
+    email: 'almacen@takab.com'
+  },
+  {
+    id: 3,
+    username: 'empleado',
+    password: 'empleado123',
+    name: 'Juan Pérez',
+    role: 'empleado',
+    active: true,
+    email: 'juan.perez@takab.com'
+  }
+];
 
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [user, setUser] = useState<User | null>(null);
@@ -27,24 +57,23 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const login = async (username: string, password: string): Promise<boolean> => {
     setIsLoading(true);
     
-    try {
-      // Authenticate user using database
-      const authenticatedUser = await userService.authenticate(username, password);
-      
-      if (authenticatedUser) {
-        setUser(authenticatedUser);
-        localStorage.setItem('takab_user', JSON.stringify(authenticatedUser));
-        setIsLoading(false);
-        return true;
-      }
-      
+    // Simular delay de autenticación
+    await new Promise(resolve => setTimeout(resolve, 1000));
+    
+    const foundUser = mockUsers.find(
+      u => u.username === username && u.password === password && u.active
+    );
+    
+    if (foundUser) {
+      const { password: _, ...userWithoutPassword } = foundUser;
+      setUser(userWithoutPassword);
+      localStorage.setItem('takab_user', JSON.stringify(userWithoutPassword));
       setIsLoading(false);
-      return false;
-    } catch (error) {
-      console.error('Error en login:', error);
-      setIsLoading(false);
-      return false;
+      return true;
     }
+    
+    setIsLoading(false);
+    return false;
   };
 
   const logout = () => {
