@@ -2,7 +2,7 @@
 import React from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { Button } from '@/components/ui/button';
-import { LogOut, Home, Calendar, User, Cog } from 'lucide-react';
+import { LogOut, Home, Calendar, User, Cog, Users } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 
 interface LayoutProps {
@@ -50,6 +50,7 @@ const Layout: React.FC<LayoutProps> = ({ children, currentPage = 'Dashboard' }) 
       { id: 'solicitudes', name: 'Solicitudes', icon: Calendar, path: '/solicitudes' },
       { id: 'productos', name: 'Productos', icon: Calendar, path: '/productos' },
       { id: 'inventario', name: 'Inventario', icon: Calendar, path: '/inventario' },
+      { id: 'usuarios', name: 'Usuarios', icon: Users, path: '/usuarios' },
       { id: 'reportes', name: 'Reportes', icon: Calendar, path: '/reportes' },
       { id: 'configuracion', name: 'Configuración', icon: Cog, path: '/configuracion' },
     ];
