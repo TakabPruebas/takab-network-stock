@@ -455,16 +455,164 @@ const ReportesManagement: React.FC = () => {
           </Card>
         </TabsContent>
 
-        <TabsContent value="usuarios">
+        <TabsContent value="usuarios" className="space-y-6">
+          {/* Métricas de Usuarios */}
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+            <Card>
+              <CardContent className="p-6">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-sm font-medium text-gray-600">Total Usuarios</p>
+                    <p className="text-2xl font-bold">18</p>
+                  </div>
+                  <Users className="h-8 w-8 text-takab-600" />
+                </div>
+              </CardContent>
+            </Card>
+            <Card>
+              <CardContent className="p-6">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-sm font-medium text-gray-600">Usuarios Activos</p>
+                    <p className="text-2xl font-bold text-green-600">16</p>
+                  </div>
+                  <Users className="h-8 w-8 text-green-600" />
+                </div>
+              </CardContent>
+            </Card>
+            <Card>
+              <CardContent className="p-6">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-sm font-medium text-gray-600">Inactivos</p>
+                    <p className="text-2xl font-bold text-red-600">2</p>
+                  </div>
+                  <AlertCircle className="h-8 w-8 text-red-600" />
+                </div>
+              </CardContent>
+            </Card>
+            <Card>
+              <CardContent className="p-6">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-sm font-medium text-gray-600">Nuevos (Mes)</p>
+                    <p className="text-2xl font-bold text-blue-600">3</p>
+                  </div>
+                  <TrendingUp className="h-8 w-8 text-blue-600" />
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            {/* Usuarios por Rol */}
+            <Card>
+              <CardHeader>
+                <CardTitle>Distribución por Roles</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Rol</TableHead>
+                      <TableHead>Cantidad</TableHead>
+                      <TableHead>Porcentaje</TableHead>
+                      <TableHead>Estado</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    <TableRow>
+                      <TableCell className="font-medium">Administrador</TableCell>
+                      <TableCell>3</TableCell>
+                      <TableCell>17%</TableCell>
+                      <TableCell><span className="text-green-600">Activos</span></TableCell>
+                    </TableRow>
+                    <TableRow>
+                      <TableCell className="font-medium">Almacén</TableCell>
+                      <TableCell>5</TableCell>
+                      <TableCell>28%</TableCell>
+                      <TableCell><span className="text-green-600">Activos</span></TableCell>
+                    </TableRow>
+                    <TableRow>
+                      <TableCell className="font-medium">Empleado</TableCell>
+                      <TableCell>10</TableCell>
+                      <TableCell>55%</TableCell>
+                      <TableCell><span className="text-green-600">8 Activos</span></TableCell>
+                    </TableRow>
+                  </TableBody>
+                </Table>
+              </CardContent>
+            </Card>
+
+            {/* Actividad Reciente */}
+            <Card>
+              <CardHeader>
+                <CardTitle>Actividad Reciente de Usuarios</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Usuario</TableHead>
+                      <TableHead>Último Acceso</TableHead>
+                      <TableHead>Solicitudes</TableHead>
+                      <TableHead>Estado</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    <TableRow>
+                      <TableCell className="font-medium">Juan Pérez</TableCell>
+                      <TableCell>Hoy 09:15</TableCell>
+                      <TableCell>23</TableCell>
+                      <TableCell><span className="text-green-600">Activo</span></TableCell>
+                    </TableRow>
+                    <TableRow>
+                      <TableCell className="font-medium">María López</TableCell>
+                      <TableCell>Ayer 16:30</TableCell>
+                      <TableCell>18</TableCell>
+                      <TableCell><span className="text-green-600">Activo</span></TableCell>
+                    </TableRow>
+                    <TableRow>
+                      <TableCell className="font-medium">Carlos Ruiz</TableCell>
+                      <TableCell>Hace 3 días</TableCell>
+                      <TableCell>15</TableCell>
+                      <TableCell><span className="text-yellow-600">Inactivo</span></TableCell>
+                    </TableRow>
+                    <TableRow>
+                      <TableCell className="font-medium">Ana García</TableCell>
+                      <TableCell>Hoy 11:45</TableCell>
+                      <TableCell>12</TableCell>
+                      <TableCell><span className="text-green-600">Activo</span></TableCell>
+                    </TableRow>
+                  </TableBody>
+                </Table>
+              </CardContent>
+            </Card>
+          </div>
+
+          {/* Estadísticas Adicionales */}
           <Card>
-            <CardContent className="p-8 text-center">
-              <Users className="h-16 w-16 text-gray-400 mx-auto mb-4" />
-              <h3 className="text-lg font-medium text-gray-900 mb-2">
-                Reporte de Usuarios
-              </h3>
-              <p className="text-gray-600">
-                Esta funcionalidad estará disponible próximamente
-              </p>
+            <CardHeader>
+              <CardTitle>Métricas de Productividad</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <div className="text-center p-4 bg-blue-50 rounded-lg">
+                  <p className="text-sm font-medium text-gray-600">Promedio Solicitudes/Usuario</p>
+                  <p className="text-3xl font-bold text-blue-600">8.7</p>
+                  <p className="text-xs text-gray-500">Por mes</p>
+                </div>
+                <div className="text-center p-4 bg-green-50 rounded-lg">
+                  <p className="text-sm font-medium text-gray-600">Tasa de Aprobación</p>
+                  <p className="text-3xl font-bold text-green-600">89%</p>
+                  <p className="text-xs text-gray-500">Solicitudes aprobadas</p>
+                </div>
+                <div className="text-center p-4 bg-purple-50 rounded-lg">
+                  <p className="text-sm font-medium text-gray-600">Tiempo Promedio Sesión</p>
+                  <p className="text-3xl font-bold text-purple-600">2.4h</p>
+                  <p className="text-xs text-gray-500">Por día</p>
+                </div>
+              </div>
             </CardContent>
           </Card>
         </TabsContent>
